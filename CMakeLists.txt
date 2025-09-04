@@ -1,0 +1,20 @@
+
+cmake_minimum_required(VERSION 3.18)
+project(github_0trust_tools NONE)
+if(EXISTS "${CMAKE_SOURCE_DIR}/third_party/github-0trust")
+  set(CONTRIB_DIR "${CMAKE_SOURCE_DIR}/third_party/github-0trust")
+elseif(EXISTS "${CMAKE_SOURCE_DIR}/.tooling/github-0trust")
+  set(CONTRIB_DIR "${CMAKE_SOURCE_DIR}/.tooling/github-0trust")
+else()
+  set(CONTRIB_DIR "${CMAKE_SOURCE_DIR}/third_party/github-0trust")
+endif()
+set(SCRIPTS "${CONTRIB_DIR}/scripts")
+set(DEFAULT_BRANCH "main" CACHE STRING "")
+set(CONTRIB_PREFIX "contribute" CACHE STRING "")
+set(PR_TARGET_BRANCH "main" CACHE STRING "")
+set(PUSH_PR "false" CACHE STRING "")
+find_program(BASH bash REQUIRED)
+add_custom_target(verify COMMAND ${BASH} ${SCRIPTS}/verify-env.sh USES_TERMINAL)
+add_custom_target(demo
+  COMMAND ${CMAKE_COMMAND} -E env BARE_REPO_PATH=$<SHELL_PATH:${CMAKE_SOURCE_DIR}>/.git DEFAULT_BRANCH=${DEFAULT_BRANCH} CONTRIB_PREFIX=${CONTRIB_PREFIX} PUSH_PR=${PUSH_PR} PR_TARGET_BRANCH=${PR_TARGET_BRANCH} ${BASH} ${SCRIPTS}/contribute-commit ${CMAKE_SOURCE_DIR}/examples/demo.patch demo
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR} USES_TERMINAL)
