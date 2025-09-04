@@ -1,0 +1,27 @@
+name: 0trust Demo Smoke Test
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  demo:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Git (for scripts that call git)
+        run: |
+          git config user.email "ci@noreply.invalid"
+          git config user.name "CI"
+
+      - name: Run demo
+        run: make demo CONTRIB_DIR=./
