@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+set -euo pipefail
+: "${BARE_REPO_PATH:?missing BARE_REPO_PATH}"
+: "${DEFAULT_BRANCH:=main}"
+: "${CONTRIB_PREFIX:=contribute}"
+: "${PUSH_PR:=false}"
+: "${PR_TARGET_BRANCH:=main}"
+PATCH="${1:-}"; TOPIC="${2:-}"
+[ -f "$PATCH" ] || { echo "usage: contribute-commit /path/to.patch [topic]"; exit 64; }
+TS="$(date +%Y%m%d-%H%M%S)"
+BASE="${PATCH##*/}"; BASE="${BASE%.*}"
+SANITIZED="$(echo "$BASE" | tr -cd '[:alnum:]._-')"
+TOPIC="${TOPIC:-$SANITIZED}"
+BR="${CONTRIB_PREFIX}/${TOPIC}-${TS}"
+REF="refs/heads/${BR}"
+WT="$(mktemp -d)"; trap 'rm -rf "$WT"' EXIT
+if git -C "$BARE_REPO_PATH" rev-parse "refs/heads/${DEFAULT_BRANCH}" >/dev/null 2>&1; then
+  git -C "$BARE_REPO_PATH" worktree add --detach "$WT" "refs/heads/${DEFAULT_BRANCH}"
+else
+  git -C "$BARE_REPO_PATH" worktree add --detach "$WT"
+fi
+git -C "$WT" checkout -b "$BR"
+if git -C "$WT" am --3way --keep-non-patch < "$PATCH"; then :; else
+  git -C "$WT" apply --index --3way "$PATCH" || git -C "$WT" apply --index "$PATCH"
+  git -C "$WT" commit -m "External contribution: ${TOPIC}
+
+Co-authored-by: External-Contrib <noreply@example.invalid>"
+fi
+if [[ "$PUSH_PR" == "true" ]]; then
+  git -C "$WT" push origin "HEAD:${REF}" -o merge_request.create -o "merge_request.target=${PR_TARGET_BRANCH}"
+else
+  git -C "$WT" push origin "HEAD:${REF}"
+fi
+echo "[ok] pushed ${BR}"
