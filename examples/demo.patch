@@ -1,0 +1,12 @@
+From: Example <example@noreply.invalid>
+Subject: demo: add hello.txt
+
+---
+ hello.txt | 1 +
+ 1 file changed, 1 insertion(+)
+ create mode 100644 hello.txt
+
+diff --git a/hello.txt b/hello.txt
+new file mode 100644
+index 0000000..e69de29
++Hello world from contribute lane!
